@@ -1,1 +1,71 @@
 
+import nltk
+from nltk.chat.util import Chat, reflections
+from chatterbot import ChatBot
+from chatterbot.trainers import ChatterBotCorpusTrainer
+import openai
+
+# OpenAI GPT API key (optional, set your key here)
+openai.api_key = "your_api_key_here"
+
+# Rule-based chatbot using NLTK
+nltk_pairs = [
+    ["hi|hello|hey", ["Hello!", "Hey there!", "Hi!"]],
+    ["how are you?", ["I'm fine, thank you!", "Doing well, and you?"]],
+    ["what is your name?", ["I'm a chatbot!", "I go by ChatBot AI."]],
+    ["bye|goodbye", ["Goodbye!", "See you later!", "Take care!"]],
+]
+
+nltk_chatbot = Chat(nltk_pairs, reflections)
+
+# AI chatbot using ChatterBot
+chatbot_ai = ChatBot("MyChatBot")
+trainer = ChatterBotCorpusTrainer(chatbot_ai)
+trainer.train("chatterbot.corpus.english")
+
+# GPT-powered chatbot function
+def gpt_chatbot(prompt):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response["choices"][0]["message"]["content"]
+    except:
+        return "Sorry, I am unable to process your request right now."
+
+# Main chatbot function
+def chatbot():
+    print("Chatbot: Hello! Type 'bye' to exit.")
+
+    while True:
+        user_input = input("You: ").strip().lower()
+        
+        if user_input in ["bye", "exit", "quit"]:
+            print("Chatbot: Goodbye!")
+            break
+
+        # Rule-based chatbot (NLTK)
+        response = nltk_chatbot.respond(user_input)
+        if response:
+            print(f"Chatbot (NLTK): {response}")
+            continue
+
+        # AI chatbot (ChatterBot)
+        try:
+            response = chatbot_ai.get_response(user_input)
+            if response.confidence > 0.5:
+                print(f"Chatbot (AI): {response}")
+                continue
+        except:
+            pass
+
+        # GPT-powered chatbot (if API key is provided)
+        if openai.api_key:
+            response = gpt_chatbot(user_input)
+            print(f"Chatbot (GPT): {response}")
+        else:
+            print("Chatbot: I didn't understand. Can you rephrase?")
+
+# Start the chatbot
+chatbot()
