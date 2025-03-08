@@ -1,1 +1,35 @@
 
+import pandas as pd
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample user-item rating matrix (Users vs. Movies)
+data = {
+    'User': ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D'],
+    'Movie': ['Inception', 'Titanic', 'Inception', 'Avengers', 'Titanic', 'Avengers', 'Inception', 'Avengers'],
+    'Rating': [5, 4, 5, 3, 4, 5, 4, 2]
+}
+
+df = pd.DataFrame(data)
+
+# Create User-Movie Pivot Table
+pivot_table = df.pivot_table(index='User', columns='Movie', values='Rating').fillna(0)
+
+# Compute Cosine Similarity between users
+similarity_matrix = cosine_similarity(pivot_table)
+
+# Recommend items based on similar users
+def recommend(user):
+    user_index = list(pivot_table.index).index(user)
+    similar_users = np.argsort(similarity_matrix[user_index])[::-1][1:]  # Get similar users
+    recommendations = []
+    
+    for similar_user in similar_users:
+        movies = pivot_table.iloc[similar_user][pivot_table.iloc[similar_user] > 0].index.tolist()
+        recommendations.extend(movies)
+
+    return list(set(recommendations) - set(pivot_table.loc[user][pivot_table.loc[user] > 0].index))
+
+# Example: Recommend movies for User 'A'
+print("Recommended Movies for A:", recommend('A'))
+
